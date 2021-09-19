@@ -30,6 +30,8 @@ import java.util.*
 
 class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
 
+    private var remoteInit = false
+    private var localInit = false
     private var isOnSpeaker: Boolean = false
     private var toggleMyMic: Boolean = false
     private val viewModel: MainActivityViewModel by viewModels()
@@ -153,8 +155,6 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         val grantedVideo =
             EasyPermissions.hasPermissions(this, Manifest.permission.CAMERA)
         if (grantedAudio && grantedVideo) {
-            RtcManager.initSurfaceRendrer(binding.remoteView)
-            RtcManager.initSurfaceRendrer(binding.localView)
             SocketRepository().getSocketLiveData()
                 ?.sendEvent(SocketEventModel("join", BaseClass.gSon.toJson(me)))
         } else {
@@ -216,6 +216,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 SessionDescription::class.java
             )
         )
+        Timber.tag("VoiceChat").d("Offer received. Setting local and remote view")
         client?.peerConnection?.createAnswer(client.sdpObserver, rtcManager.getMediaConstraints())
     }
 
@@ -260,11 +261,22 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     }
 
     private fun initCall() {
+        Timber.tag("VoiceChat").d("Init call...")
+
+        if (!remoteInit) {
+            remoteInit = true
+            RtcManager.initSurfaceRendrer(binding.remoteView)
+        }
+        if (!localInit) {
+            localInit = true
+            RtcManager.initSurfaceRendrer(binding.localView)
+        }
         rtcManager.createPeerConnections(
             xUser.userId.toString(),
             "", binding.localView,
             binding.remoteView
         )
+
         startStatsTimer()
         if (me.reqTime < xUser.reqTime) {
             val newUser = rtcManager.rctClientList.firstOrNull()
@@ -272,7 +284,8 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
                 newUser.sdpObserver,
                 rtcManager.getMediaConstraints()
             )
-            Timber.d("Call offer created for ${xUser.userId}")
+            Timber.tag("VoiceChat").d("Call offer created for ${xUser.userId}")
+
         }
 
     }

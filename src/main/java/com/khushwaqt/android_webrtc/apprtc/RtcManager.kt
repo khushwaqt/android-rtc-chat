@@ -9,6 +9,10 @@ import org.webrtc.PeerConnection.IceServer
 import timber.log.Timber
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
+import org.webrtc.VideoCapturer
+
+
+
 
 
 object RtcManager {
@@ -16,8 +20,6 @@ object RtcManager {
     val rctClientList = CopyOnWriteArrayList<RtcClientModel>()
     private val mediaConstraints = MediaConstraints().apply {
         mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
-        mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
-        mandatory.add(MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"))
     }
 
 
@@ -69,8 +71,14 @@ object RtcManager {
             .createPeerConnectionFactory()
     }
 
-    fun createPeerConnections(userId: String, socketId: String, localStream: SurfaceViewRenderer,remoteView:SurfaceViewRenderer) {
+    fun createPeerConnections(
+        userId: String,
+        socketId: String,
+        localStream: SurfaceViewRenderer,
+        remoteView: SurfaceViewRenderer
+    ) {
         Timber.tag("VoiceChat").d("Init  video capturer.")
+
         val surfaceTextureHelper =
             SurfaceTextureHelper.create(Thread.currentThread().name, rootEglBase.eglBaseContext)
         (videoCapturer as VideoCapturer).initialize(
@@ -83,8 +91,7 @@ object RtcManager {
         val peerConnectionObserver = PeerConnectionObserver()
         peerConnectionObserver.userId = userId
         peerConnectionObserver.socketId = socketId
-        peerConnectionObserver.remoteView =remoteView
-
+        peerConnectionObserver.remoteView = remoteView
         Timber.tag("VoiceChat").d("Creating SDP observer for user $userId")
         val sdpObserver = AppSdpObserver()
         sdpObserver.userId = userId
@@ -100,9 +107,10 @@ object RtcManager {
             userId,
             localAudioSource
         )
-        val localVideoTrack = peerConnectionFactory.createVideoTrack(userId, localVideoSource)
+        val localVideoTrack =
+            peerConnectionFactory.createVideoTrack(userId + "_video", localVideoSource)
         localVideoTrack?.addSink(localStream)
-        val localMediaStream = peerConnectionFactory.createLocalMediaStream(userId)
+        val localMediaStream = peerConnectionFactory.createLocalMediaStream(userId + "local_stream")
         localMediaStream.addTrack(audioTrack)
         localMediaStream.addTrack(localVideoTrack)
         peerConnection?.addStream(localMediaStream)
