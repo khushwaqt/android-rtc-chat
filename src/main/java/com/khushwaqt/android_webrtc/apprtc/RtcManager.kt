@@ -12,11 +12,9 @@ import java.util.concurrent.CopyOnWriteArrayList
 import org.webrtc.VideoCapturer
 
 
-
-
-
 object RtcManager {
 
+    private var surfaceInit = false
     val rctClientList = CopyOnWriteArrayList<RtcClientModel>()
     private val mediaConstraints = MediaConstraints().apply {
         mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
@@ -47,7 +45,7 @@ object RtcManager {
 
     fun initSurfaceRendrer(view: SurfaceViewRenderer) {
         view.setMirror(true)
-        view.setEnableHardwareScaler(true)
+        view.setEnableHardwareScaler(false)
         view.init(rootEglBase.eglBaseContext, null)
     }
 
@@ -78,15 +76,17 @@ object RtcManager {
         remoteView: SurfaceViewRenderer
     ) {
         Timber.tag("VoiceChat").d("Init  video capturer.")
-
-        val surfaceTextureHelper =
-            SurfaceTextureHelper.create(Thread.currentThread().name, rootEglBase.eglBaseContext)
-        (videoCapturer as VideoCapturer).initialize(
-            surfaceTextureHelper,
-            localStream.context,
-            localVideoSource.capturerObserver
-        )
-        videoCapturer.startCapture(320, 240, 60)
+        if (!surfaceInit) {
+            surfaceInit = true
+            val surfaceTextureHelper =
+                SurfaceTextureHelper.create(Thread.currentThread().name, rootEglBase.eglBaseContext)
+            (videoCapturer as VideoCapturer).initialize(
+                surfaceTextureHelper,
+                localStream.context,
+                localVideoSource.capturerObserver
+            )
+            videoCapturer.startCapture(320, 240, 60)
+        }
         Timber.tag("VoiceChat").d("Creating peer connection observer for user $userId")
         val peerConnectionObserver = PeerConnectionObserver()
         peerConnectionObserver.userId = userId

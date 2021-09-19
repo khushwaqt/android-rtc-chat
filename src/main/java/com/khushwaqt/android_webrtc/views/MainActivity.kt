@@ -273,7 +273,7 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
         }
         rtcManager.createPeerConnections(
             xUser.userId.toString(),
-            "", binding.localView,
+            xUser.userId.toString(), binding.localView,
             binding.remoteView
         )
 
