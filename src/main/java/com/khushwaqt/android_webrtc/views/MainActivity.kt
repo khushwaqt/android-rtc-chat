@@ -148,18 +148,32 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     }
 
     private fun checkPermissions() {
-        val granted =
+        val grantedAudio =
             EasyPermissions.hasPermissions(this, Manifest.permission.RECORD_AUDIO)
-        if (granted) {
+        val grantedVideo =
+            EasyPermissions.hasPermissions(this, Manifest.permission.CAMERA)
+        if (grantedAudio && grantedVideo) {
+            RtcManager.initSurfaceRendrer(binding.remoteView)
+            RtcManager.initSurfaceRendrer(binding.localView)
             SocketRepository().getSocketLiveData()
                 ?.sendEvent(SocketEventModel("join", BaseClass.gSon.toJson(me)))
         } else {
-            EasyPermissions.requestPermissions(
-                this,
-                getString(R.string.permission_required),
-                MIC_PERMISSION,
-                Manifest.permission.RECORD_AUDIO
-            )
+            if (!grantedAudio) {
+                EasyPermissions.requestPermissions(
+                    this,
+                    getString(R.string.permission_required),
+                    MIC_PERMISSION,
+                    Manifest.permission.RECORD_AUDIO
+                )
+            }
+            if (!grantedVideo) {
+                EasyPermissions.requestPermissions(
+                    this,
+                    getString(R.string.permission_required),
+                    MIC_PERMISSION,
+                    Manifest.permission.CAMERA
+                )
+            }
         }
     }
 
@@ -248,7 +262,8 @@ class MainActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
     private fun initCall() {
         rtcManager.createPeerConnections(
             xUser.userId.toString(),
-            ""
+            "", binding.localView,
+            binding.remoteView
         )
         startStatsTimer()
         if (me.reqTime < xUser.reqTime) {

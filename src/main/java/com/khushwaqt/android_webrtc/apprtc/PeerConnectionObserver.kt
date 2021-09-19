@@ -8,6 +8,7 @@ import timber.log.Timber
 
 
 class PeerConnectionObserver : PeerConnection.Observer {
+    var remoteView: SurfaceViewRenderer? = null
     var userId: String? = null
     var socketId: String? = null
     override fun onSignalingChange(signalingState: PeerConnection.SignalingState) {
@@ -45,7 +46,8 @@ class PeerConnectionObserver : PeerConnection.Observer {
 
     override fun onAddStream(mediaStream: MediaStream) {
         Timber.tag("VoiceChat").d("On Add Stream")
-//            toggleMic(micStatus)
+        //            toggleMic(micStatus)
+        mediaStream.videoTracks?.get(0)?.addSink(remoteView)
     }
 
     override fun onRemoveStream(mediaStream: MediaStream) {
